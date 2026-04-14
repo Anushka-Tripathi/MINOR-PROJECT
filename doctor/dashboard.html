@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Dashboard | MediCare Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <style>
+    .sidebar { background: linear-gradient(180deg, #061528 0%, #083d2e 100%); }
+    .page-bg-doctor { background: #f0fff8; }
+    .ai-panel { background: linear-gradient(135deg, #061528 0%, #0a3d2e 100%); }
+
+    .patient-profile-card {
+      background: white;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--card-shadow);
+    }
+    .patient-avatar-lg {
+      width: 60px; height: 60px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--teal-500), var(--green-500));
+      display: grid; place-items: center;
+      color: white; font-size: 24px; font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .rx-item { padding:12px; background:var(--ink-50); border:1px solid var(--card-border); border-radius:var(--radius-md); margin-bottom:10px; }
+    .rx-item:last-child { margin-bottom:0; }
+
+    .diag-item { padding:14px; background:var(--ink-50); border-radius:var(--radius-md); border:1px solid var(--card-border); margin-bottom:10px; }
+    .diag-item:last-child { margin-bottom:0; }
+    .diag-prob-bar { height:6px; background:var(--ink-200); border-radius:3px; margin-top:6px; overflow:hidden; }
+    .diag-prob-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--teal-400),var(--teal-500)); }
+
+    .soap-block { padding:14px; background:var(--ink-50); border-radius:var(--radius-md); border-left:3px solid var(--teal-500); margin-bottom:10px; }
+    .soap-block h5 { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--teal-500); font-weight:700; margin-bottom:6px; }
+    .soap-block p { font-size:13.5px; color:var(--ink-800); line-height:1.6; }
+
+    .interaction-item { padding:12px; border-radius:var(--radius-md); border:1px solid; margin-bottom:10px; }
+    .interaction-item.high   { background:var(--red-100);   border-color:var(--red-500);   }
+    .interaction-item.medium { background:var(--amber-100); border-color:var(--amber-500); }
+    .interaction-item.low    { background:var(--green-100); border-color:var(--green-500); }
+    .interaction-item:last-child { margin-bottom:0; }
+
+    .patient-list-item { display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-md);cursor:pointer;transition:background .15s; }
+    .patient-list-item:hover { background:var(--ink-50); }
+    .patient-list-item.active { background:rgba(0,200,194,0.08);border:1px solid rgba(0,200,194,0.2); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a href="../index.html" style="display:contents;">
+        <div class="sidebar-logo" style="background:linear-gradient(135deg,#00c8c2,#10b981);"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div class="sidebar-brand-text"><strong>MediCare Pro</strong><small>Doctor Module</small></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Clinical</span>
+      <a class="nav-link active" onclick="showSection('consult')"><i class="fa-solid fa-stethoscope"></i> Consult Room</a>
+      <a class="nav-link" onclick="showSection('patients')"><i class="fa-solid fa-users"></i> My Patients</a>
+      <a class="nav-link" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-check"></i> Appointments</a>
+      <a class="nav-link" onclick="showSection('records')"><i class="fa-solid fa-notes-medical"></i> EMR / Records</a>
+      <a class="nav-link" onclick="showSection('prescriptions')"><i class="fa-solid fa-prescription-bottle-medical"></i> Prescriptions</a>
+      <span class="nav-section-label">AI Tools</span>
+      <a class="nav-link" onclick="showSection('ai-diagnosis')"><i class="fa-solid fa-brain"></i> Diagnosis AI</a>
+      <a class="nav-link" onclick="showSection('ai-drug')"><i class="fa-solid fa-pills"></i> Drug Checker</a>
+      <a class="nav-link" onclick="showSection('ai-soap')"><i class="fa-solid fa-file-medical"></i> SOAP Generator</a>
+      <a class="nav-link" onclick="showSection('ai-chat')"><i class="fa-solid fa-comment-medical"></i> AI Copilot Chat</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" data-user-initials style="background:linear-gradient(135deg,#00c8c2,#10b981);">DR</div>
+        <div class="sidebar-user-info"><strong data-user-name>Dr. User</strong><small data-user-role>Doctor</small></div>
+        <button onclick="MediCare.logout()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:14px;"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-breadcrumb" id="breadcrumb">Clinical Workspace</span>
+      <span class="topbar-title" id="page-title">Consult Room</span>
+    </div>
+    <div class="topbar-right">
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-400);" data-clock></span>
+      <div class="status-dot" style="color:var(--teal-500);background:var(--teal-100);">AI Copilot Active</div>
+      <button class="topbar-btn" onclick="MediCare.toggleNotifications('doctor')" title="Notifications"><i class="fa-regular fa-bell"></i><span class="badge" id="notif-badge" style="display:none;">0</span></button>
+      <button class="topbar-btn" onclick="showSection('ai-chat')" title="AI Copilot"><i class="fa-solid fa-comment-medical"></i></button>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+
+    <!-- ═══════════ CONSULT ROOM ═══════════ -->
+    <section id="sec-consult">
+      <div class="page-header">
+        <div><h1>Consult Room</h1><p>Active patient consultation with AI support</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="loadTodayAppointments()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          <button class="btn btn-teal btn-sm" onclick="showSection('ai-diagnosis')"><i class="fa-solid fa-brain"></i> AI Diagnosis</button>
+        </div>
+      </div>
+
+      <div class="content-grid cols-3-2">
+        <!-- Left: Patient + Vitals -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Current Patient -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Current Patient</div>
+              <div style="display:flex;gap:6px;" id="appt-queue-tags"></div>
+            </div>
+            <div class="panel-body" id="current-patient-body">
+              <div class="empty-state"><i class="fa-solid fa-user-clock"></i><p>Select a patient from the queue below</p></div>
+            </div>
+          </div>
+
+          <!-- Vitals Input -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Record Vitals</div>
+              <button class="btn btn-teal btn-sm" onclick="saveVitals()"><i class="fa-solid fa-save"></i> Save</button>
+            </div>
+            <div class="panel-body">
+              <div class="form-grid cols-2">
+                <div class="form-group"><label class="form-label">BP Systolic</label><input class="form-control" id="v-bps" type="number" placeholder="120"></div>
+                <div class="form-group"><label class="form-label">BP Diastolic</label><input class="form-control" id="v-bpd" type="number" placeholder="80"></div>
+                <div class="form-group"><label class="form-label">Pulse (bpm)</label><input class="form-control" id="v-pulse" type="number" placeholder="72"></div>
+                <div class="form-group"><label class="form-label">Temperature (°F)</label><input class="form-control" id="v-temp" type="number" step="0.1" placeholder="98.6"></div>
+                <div class="form-group"><label class="form-label">SpO2 (%)</label><input class="form-control" id="v-spo2" type="number" placeholder="99"></div>
+                <div class="form-group"><label class="form-label">Weight (kg)</label><input class="form-control" id="v-weight" type="number" placeholder="70"></div>
+                <div class="form-group"><label class="form-label">Blood Sugar (mg/dL)</label><input class="form-control" id="v-sugar" type="number" placeholder="90"></div>
+                <div class="form-group"><label class="form-label">Height (cm)</label><input class="form-control" id="v-height" type="number" placeholder="170"></div>
+              </div>
+              <div id="vitals-ai-flag" style="margin-top:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Medical Notes -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Consultation Notes</div>
+              <button class="btn btn-teal btn-sm" onclick="saveMedicalRecord()"><i class="fa-solid fa-save"></i> Save Record</button>
+            </div>
+            <div class="panel-body">
+              <div class="form-grid" style="gap:14px;">
+                <div class="form-group"><label class="form-label">Diagnosis</label><input class="form-control" id="rec-diagnosis" placeholder="Primary diagnosis..."></div>
+                <div class="form-group"><label class="form-label">Chief Complaint</label><input class="form-control" id="rec-complaint" placeholder="Patient's main complaint..."></div>
+                <div class="form-group"><label class="form-label">Examination Findings</label><textarea class="form-control" id="rec-exam" rows="2" placeholder="Physical exam notes..."></textarea></div>
+                <div class="form-group"><label class="form-label">Prescription (brief)</label><textarea class="form-control" id="rec-rx" rows="2" placeholder="Medicine, dosage..."></textarea></div>
+                <div class="form-group"><label class="form-label">Follow-up Date</label><input class="form-control" id="rec-followup" type="date"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Queue + AI -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- Today's Queue -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Today's Queue</div>
+              <span class="tag teal" id="queue-count">0 patients</span>
+            </div>
+            <div class="panel-body" style="padding:12px;" id="patient-queue">
+              <div class="empty-state"><i class="fa-solid fa-calendar-day"></i><p>No appointments today</p></div>
+            </div>
+          </div>
+
+          <!-- AI Clinical Suggestions -->
+          <div class="ai-panel">
+            <div class="ai-panel-header">
+              <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-brain"></i></div>AI Clinical Suggestions</div>
+              <div class="ai-chip">Top 3</div>
+            </div>
+            <div class="ai-panel-body" id="ai-clinical-suggestions">
+              <div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);font-size:13px;">
+                <i class="fa-solid fa-user-clock" style="font-size:28px;margin-bottom:10px;display:block;opacity:0.4;"></i>
+                Select a patient to get AI suggestions
+              </div>
+            </div>
+          </div>
+
+          <!-- Risk Score -->
+          <div class="ai-panel">
+            <div class="ai-panel-header">
+              <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>Patient Risk Score</div>
+              <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runRiskStratification()"><i class="fa-solid fa-rotate"></i> Analyze</button>
+            </div>
+            <div class="ai-panel-body" id="risk-score-panel">
+              <div class="ai-loading"><div class="ai-spinner"></div>Select a patient first</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ MY PATIENTS ═══════════ -->
+    <section id="sec-patients" class="hidden">
+      <div class="page-header"><div><h1>My Patients</h1><p>All patients under your care</p></div>
+        <div class="search-bar" style="width:260px;"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search patients..."></div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Patient</th><th>Age/Gender</th><th>Blood Group</th><th>Condition</th><th>Last Visit</th><th>Action</th></tr></thead>
+            <tbody id="my-patients-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-400);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ APPOINTMENTS ═══════════ -->
+    <section id="sec-appointments" class="hidden">
+      <div class="page-header"><div><h1>Appointments</h1><p>Your scheduled consultations</p></div>
+        <div style="display:flex;gap:8px;">
+          <input type="date" class="form-control" id="doc-apt-date" style="width:160px;">
+          <button class="btn btn-teal btn-sm" onclick="loadDocAppointments()"><i class="fa-solid fa-search"></i> Filter</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Token</th><th>Patient</th><th>Date & Time</th><th>Complaint</th><th>Status</th><th>AI Priority</th><th>Action</th></tr></thead>
+            <tbody id="doc-apts-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ EMR / RECORDS ═══════════ -->
+    <section id="sec-records" class="hidden">
+      <div class="page-header"><div><h1>Medical Records (EMR)</h1><p>Electronic medical records for your patients</p></div></div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Patient</th><th>Diagnosis</th><th>AI Summary</th><th>Risk Level</th><th>Follow-up</th><th>Date</th></tr></thead>
+            <tbody id="records-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-400);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ PRESCRIPTIONS ═══════════ -->
+    <section id="sec-prescriptions" class="hidden">
+      <div class="page-header"><div><h1>Prescriptions</h1><p>Manage prescriptions with AI safety checks</p></div>
+        <button class="btn btn-teal" onclick="showSection('ai-drug')"><i class="fa-solid fa-pills"></i> Check Drug Interactions</button>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Patient</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>AI Flag</th><th>Date</th></tr></thead>
+            <tbody id="rx-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ AI DIAGNOSIS ═══════════ -->
+    <section id="sec-ai-diagnosis" class="hidden">
+      <div class="page-header"><div><h1>AI Diagnosis Assistant</h1><p>Evidence-based differential diagnosis support</p></div></div>
+      <div class="content-grid cols-2">
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-brain"></i></div>Symptom & History Input</div>
+          </div>
+          <div class="ai-panel-body">
+            <div class="form-grid" style="gap:14px;">
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Chief Complaints</label><textarea class="form-control" id="diag-complaints" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="3" placeholder="e.g. Fever 3 days, headache, joint pain..."></textarea></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Vital Signs</label><textarea class="form-control" id="diag-vitals" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="2" placeholder="e.g. BP 140/90, Temp 102F, Pulse 96, SpO2 97%..."></textarea></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Medical History</label><textarea class="form-control" id="diag-history" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="2" placeholder="e.g. Diabetes type 2, hypertension, previous surgeries..."></textarea></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Current Medications</label><input class="form-control" id="diag-meds" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" placeholder="e.g. Metformin 500mg, Amlodipine 5mg..."></div>
+            </div>
+            <button class="btn btn-teal w-full" style="margin-top:16px;" onclick="runDiagnosis()"><i class="fa-solid fa-sparkles"></i> Generate AI Differential Diagnosis</button>
+          </div>
+        </div>
+        <div class="ai-panel" id="diagnosis-output">
+          <div class="ai-panel-header"><div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-list-check"></i></div>Differential Diagnoses</div></div>
+          <div class="ai-panel-body"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);"><i class="fa-solid fa-brain" style="font-size:32px;opacity:0.3;display:block;margin-bottom:12px;"></i>Enter symptoms and click Generate</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ DRUG CHECKER ═══════════ -->
+    <section id="sec-ai-drug" class="hidden">
+      <div class="page-header"><div><h1>Drug Interaction Checker</h1><p>AI-powered prescription safety verification</p></div></div>
+      <div class="content-grid cols-2">
+        <div class="ai-panel">
+          <div class="ai-panel-header"><div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-pills"></i></div>Enter Medicines</div></div>
+          <div class="ai-panel-body">
+            <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Medicine List (one per line or comma-separated)</label><textarea class="form-control" id="drug-list" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="6" placeholder="e.g. Metformin 500mg&#10;Aspirin 75mg&#10;Lisinopril 10mg&#10;Atorvastatin 20mg"></textarea></div>
+            <div class="form-group" style="margin-top:14px;"><label class="form-label" style="color:rgba(255,255,255,0.7);">Patient Conditions (optional)</label><input class="form-control" id="drug-conditions" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" placeholder="e.g. Renal impairment, Liver disease..."></div>
+            <button class="btn btn-teal w-full" style="margin-top:16px;" onclick="runDrugCheck()"><i class="fa-solid fa-shield-halved"></i> Check Interactions</button>
+          </div>
+        </div>
+        <div class="ai-panel" id="drug-output">
+          <div class="ai-panel-header"><div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-shield-halved"></i></div>Interaction Report</div></div>
+          <div class="ai-panel-body"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);"><i class="fa-solid fa-pills" style="font-size:32px;opacity:0.3;display:block;margin-bottom:12px;"></i>Enter medicines and click Check</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ SOAP GENERATOR ═══════════ -->
+    <section id="sec-ai-soap" class="hidden">
+      <div class="page-header"><div><h1>SOAP Note Generator</h1><p>AI-generated structured clinical documentation</p></div></div>
+      <div class="content-grid cols-2">
+        <div class="ai-panel">
+          <div class="ai-panel-header"><div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-notes-medical"></i></div>Consultation Data</div></div>
+          <div class="ai-panel-body">
+            <div class="form-grid" style="gap:14px;">
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Patient's Complaint (Subjective)</label><textarea class="form-control" id="soap-subjective" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="3" placeholder="What the patient tells you..."></textarea></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Examination Findings (Objective)</label><textarea class="form-control" id="soap-objective" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="3" placeholder="What you observe and measure..."></textarea></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Your Working Diagnosis</label><input class="form-control" id="soap-diagnosis" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" placeholder="e.g. Viral fever with possible dengue"></div>
+              <div class="form-group"><label class="form-label" style="color:rgba(255,255,255,0.7);">Treatment Plan</label><textarea class="form-control" id="soap-plan" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white;" rows="2" placeholder="Medications, investigations, follow-up..."></textarea></div>
+            </div>
+            <button class="btn btn-teal w-full" style="margin-top:16px;" onclick="runSOAPGenerator()"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate SOAP Note</button>
+          </div>
+        </div>
+        <div class="ai-panel" id="soap-output">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-file-medical"></i></div>Generated SOAP Note</div>
+            <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="copySOAP()"><i class="fa-regular fa-copy"></i> Copy</button>
+          </div>
+          <div class="ai-panel-body" id="soap-result"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.4);"><i class="fa-solid fa-file-medical" style="font-size:32px;opacity:0.3;display:block;margin-bottom:12px;"></i>SOAP note will appear here</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ AI COPILOT CHAT ═══════════ -->
+    <section id="sec-ai-chat" class="hidden">
+      <div class="page-header"><div><h1>AI Clinical Copilot</h1><p>Your evidence-based medical AI assistant</p></div></div>
+      <div class="ai-panel" style="max-width:800px;">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-robot"></i></div>Clinical AI Assistant</div>
+          <div class="ai-chip"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Online</div>
+        </div>
+        <div style="padding:0;" id="doctor-chat-container">
+          <div class="chat-container">
+            <div class="chat-messages" id="doctor-chat-messages"></div>
+            <div class="chat-input-area">
+              <input class="chat-input" id="doctor-chat-input" placeholder="Ask about diagnosis, drug dosages, clinical protocols, treatment guidelines...">
+              <button class="chat-send-btn" id="doctor-chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="../assets/js/medicare.js"></script>
+<script>
+const sections = ['consult','patients','appointments','records','prescriptions','ai-diagnosis','ai-drug','ai-soap','ai-chat'];
+const sectionTitles = { consult:'Consult Room', patients:'My Patients', appointments:'Appointments', records:'EMR / Records', prescriptions:'Prescriptions', 'ai-diagnosis':'Diagnosis AI', 'ai-drug':'Drug Checker', 'ai-soap':'SOAP Generator', 'ai-chat':'AI Copilot Chat' };
+
+let currentPatient = null;
+let currentAppointmentId = null;
+let user = null;
+
+function showSection(name) {
+  sections.forEach(s => { const el = document.getElementById('sec-' + s); if(el) el.classList.toggle('hidden', s !== name); });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const active = [...document.querySelectorAll('.nav-link')].find(l => l.getAttribute('onclick')?.includes(`'${name}'`));
+  if (active) active.classList.add('active');
+  document.getElementById('page-title').textContent = sectionTitles[name] || name;
+  document.getElementById('breadcrumb').textContent = 'Clinical Workspace';
+  if (name === 'patients')      loadMyPatients();
+  if (name === 'appointments')  loadDocAppointments();
+  if (name === 'records')       loadRecords();
+  if (name === 'prescriptions') loadPrescriptions();
+}
+
+// ── Today's Queue ─────────────────────────────────
+async function loadTodayAppointments() {
+  const today = new Date().toISOString().split('T')[0];
+  const res = await MediCare.API.get('appointments.php', { role: 'doctor', doctor_id: user?.id || 1, date: today });
+  const queue = document.getElementById('patient-queue');
+  const countTag = document.getElementById('queue-count');
+  if (!res.success || !res.data?.length) {
+    queue.innerHTML = '<div class="empty-state"><i class="fa-solid fa-calendar-day"></i><p>No appointments today</p></div>';
+    countTag.textContent = '0 patients';
+    return;
+  }
+  countTag.textContent = res.data.length + ' patients';
+  queue.innerHTML = res.data.map((a, i) => `
+    <div class="patient-list-item ${i===0?'active':''}" onclick="selectPatient(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+      <div class="avatar avatar-sm ${a.ai_priority_score > 70 ? 'red' : 'teal'}">${MediCare.initials(a.patient_name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;color:var(--ink-900);">${a.patient_name}</div>
+        <div style="font-size:12px;color:var(--ink-400);">${MediCare.formatTime(a.appointment_time)} · ${a.chief_complaint || a.type}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--ink-400);">#${a.token_number}</div>
+        ${MediCare.statusTag(a.status)}
+      </div>
+    </div>`).join('');
+  // Auto-select first
+  if (res.data[0]) selectPatient(res.data[0]);
+}
+
+function selectPatient(apt) {
+  currentPatient = apt;
+  currentAppointmentId = apt.id;
+
+  document.getElementById('current-patient-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+      <div class="patient-avatar-lg">${MediCare.initials(apt.patient_name)}</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:var(--ink-900);">${apt.patient_name}</div>
+        <div style="font-size:13px;color:var(--ink-500);">${apt.patient_gender||''} · Chief Complaint: ${apt.chief_complaint || '—'}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <span class="tag ${apt.type==='Emergency'?'red':'blue'}">${apt.type}</span>
+          ${MediCare.statusTag(apt.status)}
+          ${apt.ai_triage_label ? `<span class="tag amber">${apt.ai_triage_label}</span>` : ''}
+        </div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:11px;color:var(--ink-400);">Token</div>
+        <div style="font-size:28px;font-weight:800;color:var(--teal-500);font-family:var(--font-mono);">#${apt.token_number}</div>
+      </div>
+    </div>
+    ${apt.symptoms ? `<div style="padding:12px;background:var(--amber-100);border-radius:var(--radius-sm);border-left:3px solid var(--amber-500);font-size:13px;"><strong>Symptoms:</strong> ${apt.symptoms}</div>` : ''}`;
+
+  // Pre-fill consultation notes
+  document.getElementById('rec-complaint').value = apt.chief_complaint || '';
+
+  // Get AI suggestions
+  runAIConsultSuggestions(apt);
+}
+
+async function runAIConsultSuggestions(apt) {
+  document.getElementById('ai-clinical-suggestions').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Getting AI suggestions...</div>';
+  const res = await MediCare.aiRequest('doctor', 'diagnosis_support', {
+    patient_name: apt.patient_name,
+    symptoms: apt.symptoms || apt.chief_complaint,
+    type: apt.type,
+    triage: apt.ai_triage_label,
+  });
+  if (!res.success || !res.data) {
+    document.getElementById('ai-clinical-suggestions').innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:13px;">AI suggestions unavailable. Check API key.</p>';
+    return;
+  }
+  const d = res.data;
+  document.getElementById('ai-clinical-suggestions').innerHTML = `
+    <div class="ai-insight-list">
+      ${(d.likely_diagnoses||[]).slice(0,3).map(dx => `
+        <div class="ai-insight-item">
+          <div class="ai-insight-icon">🔬</div>
+          <div class="ai-insight-text"><strong>${dx.name}</strong> (${dx.probability}%)<br><span style="font-size:12px;">${dx.reasoning||''}</span></div>
+        </div>`).join('')}
+      ${(d.red_flags||[]).length ? `<div class="ai-insight-item"><div class="ai-insight-icon">🚨</div><div class="ai-insight-text"><strong>Red Flags:</strong> ${d.red_flags.join(', ')}</div></div>` : ''}
+      ${(d.recommended_tests||[]).length ? `<div class="ai-insight-item"><div class="ai-insight-icon">🧪</div><div class="ai-insight-text"><strong>Suggested Tests:</strong> ${d.recommended_tests.join(', ')}</div></div>` : ''}
+    </div>`;
+}
+
+async function runRiskStratification() {
+  if (!currentPatient) { MediCare.toast('Select a patient first.', 'warning'); return; }
+  document.getElementById('risk-score-panel').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Computing risk score...</div>';
+  const bps = document.getElementById('v-bps').value;
+  const pulse = document.getElementById('v-pulse').value;
+  const temp = document.getElementById('v-temp').value;
+  const res = await MediCare.aiRequest('doctor', 'risk_stratification', { patient: currentPatient.patient_name, symptoms: currentPatient.symptoms, bp: `${bps}/${document.getElementById('v-bpd').value}`, pulse, temperature: temp });
+  if (!res.success || !res.data) { document.getElementById('risk-score-panel').innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:13px;">Unavailable.</p>'; return; }
+  const d = res.data;
+  const color = d.risk_level === 'Critical' ? 'var(--red-500)' : d.risk_level === 'High' ? 'var(--amber-500)' : 'var(--green-500)';
+  document.getElementById('risk-score-panel').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+      <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.05);border:3px solid ${color};display:grid;place-items:center;flex-shrink:0;">
+        <span style="font-size:20px;font-weight:800;color:${color};">${d.risk_score||0}</span>
+      </div>
+      <div><div style="font-size:16px;font-weight:700;color:${color};">${d.risk_level} Risk</div><div style="font-size:12px;color:rgba(255,255,255,0.5);">Monitor: ${d.monitoring_frequency||'Standard'}</div></div>
+    </div>
+    ${(d.contributing_factors||[]).map(f => `<div style="font-size:12.5px;color:rgba(255,255,255,0.7);margin-bottom:4px;">• ${f}</div>`).join('')}
+    ${(d.alerts||[]).map(a => `<div class="tag red" style="display:inline-flex;margin-top:6px;margin-right:4px;">${a}</div>`).join('')}`;
+}
+
+async function saveVitals() {
+  if (!currentPatient) { MediCare.toast('Select a patient first.', 'warning'); return; }
+  const body = { patient_id: currentPatient.patient_id, appointment_id: currentAppointmentId, doctor_id: user?.id || 1, bp_systolic: document.getElementById('v-bps').value, bp_diastolic: document.getElementById('v-bpd').value, pulse: document.getElementById('v-pulse').value, temperature: document.getElementById('v-temp').value, spo2: document.getElementById('v-spo2').value, weight: document.getElementById('v-weight').value, height: document.getElementById('v-height').value, blood_sugar: document.getElementById('v-sugar').value };
+  const res = await MediCare.API.post('medical.php?action=vitals', body);
+  if (res.success) {
+    MediCare.toast('Vitals saved!', 'success');
+    // AI flag check
+    const bps = parseInt(body.bp_systolic), bpd = parseInt(body.bp_diastolic), spo2 = parseInt(body.spo2), temp = parseFloat(body.temperature);
+    let flags = [];
+    if (bps > 140 || bpd > 90) flags.push('Hypertension');
+    if (spo2 < 95) flags.push('Low SpO2');
+    if (temp > 103) flags.push('High Fever');
+    if (flags.length) document.getElementById('vitals-ai-flag').innerHTML = `<div style="padding:10px;background:var(--red-100);border-radius:var(--radius-sm);border-left:3px solid var(--red-500);font-size:13px;color:var(--red-500);"><i class="fa-solid fa-triangle-exclamation"></i> <strong>AI Alert:</strong> ${flags.join(', ')} detected</div>`;
+  } else MediCare.toast(res.error || 'Failed to save vitals.', 'error');
+}
+
+async function saveMedicalRecord() {
+  if (!currentPatient) { MediCare.toast('Select a patient first.', 'warning'); return; }
+  const body = { patient_id: currentPatient.patient_id, doctor_id: user?.id || 1, appointment_id: currentAppointmentId, diagnosis: document.getElementById('rec-diagnosis').value, chief_complaint: document.getElementById('rec-complaint').value, examination: document.getElementById('rec-exam').value, prescription: document.getElementById('rec-rx').value, follow_up_date: document.getElementById('rec-followup').value };
+  const res = await MediCare.API.post('medical.php?action=records', body);
+  if (res.success) MediCare.toast('Medical record saved!', 'success');
+  else MediCare.toast(res.error || 'Failed.', 'error');
+}
+
+// ── AI Features ───────────────────────────────────
+async function runDiagnosis() {
+  const panel = document.getElementById('diagnosis-output');
+  panel.querySelector('.ai-panel-body').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Generating differential diagnoses...</div>';
+
+  const res = await MediCare.aiRequest('doctor', 'diagnosis_support', {
+    complaints:  document.getElementById('diag-complaints').value,
+    vitals:      document.getElementById('diag-vitals').value,
+    history:     document.getElementById('diag-history').value,
+    medications: document.getElementById('diag-meds').value
+  });
+
+  if (!res.success) {
+    panel.querySelector('.ai-panel-body').innerHTML = `<p style="color:rgba(255,255,255,0.5);">AI Error: ${res.error || 'Unknown error'}</p>`;
+    return;
+  }
+
+  // Gemini may nest data differently — handle both res.data and res.data.data
+  const d = res.data?.likely_diagnoses ? res.data
+          : res.data?.data?.likely_diagnoses ? res.data.data
+          : res.data || {};
+
+  // If still no diagnoses but we have a plain text response, show it
+  if (!d.likely_diagnoses?.length && d.response) {
+    panel.querySelector('.ai-panel-body').innerHTML = `
+      <div style="padding:14px;background:rgba(255,255,255,0.05);border-radius:12px;color:rgba(255,255,255,0.85);line-height:1.7;font-size:13.5px;">${d.response}</div>`;
+    return;
+  }
+
+  // If completely empty, show raw for debugging
+  if (!d.likely_diagnoses?.length) {
+    panel.querySelector('.ai-panel-body').innerHTML = `
+      <p style="color:rgba(255,255,255,0.5);font-size:12px;">AI responded but no diagnoses found. Raw data:</p>
+      <pre style="color:var(--teal-400);font-size:11px;overflow:auto;max-height:200px;">${JSON.stringify(res.data, null, 2)}</pre>`;
+    return;
+  }
+
+  panel.querySelector('.ai-panel-body').innerHTML = `
+    ${(d.likely_diagnoses||[]).map((dx, i) => `
+      <div style="padding:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-weight:700;color:white;">${i+1}. ${dx.name || dx.diagnosis || 'Unknown'}</span>
+          <span style="font-size:14px;font-weight:800;color:var(--teal-400);font-family:var(--font-mono);">${dx.probability || dx.likelihood || '—'}${typeof (dx.probability||dx.likelihood) === 'number' ? '%' : ''}</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:3px;margin-bottom:8px;">
+          <div style="height:100%;width:${Math.min(dx.probability||dx.likelihood||50,100)}%;background:var(--teal-500);border-radius:3px;"></div>
+        </div>
+        <p style="font-size:12.5px;color:rgba(255,255,255,0.6);">${dx.reasoning || dx.explanation || ''}</p>
+      </div>`).join('')}
+    ${(d.red_flags||[]).length ? `
+      <div style="padding:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;margin-top:4px;">
+        <strong style="color:var(--red-500);">🚨 Red Flags:</strong>
+        ${d.red_flags.map(f => `<span style="font-size:12.5px;color:rgba(255,255,255,0.7);display:block;margin-top:4px;">• ${f}</span>`).join('')}
+      </div>` : ''}
+    ${(d.recommended_tests||[]).length ? `
+      <div style="padding:12px;background:rgba(0,200,194,0.08);border:1px solid rgba(0,200,194,0.2);border-radius:10px;margin-top:10px;">
+        <strong style="color:var(--teal-400);">🧪 Recommended Tests:</strong>
+        <div style="margin-top:6px;">${d.recommended_tests.map(t => `<span style="font-size:12.5px;color:rgba(255,255,255,0.7);display:block;">• ${t}</span>`).join('')}</div>
+        ${d.clinical_notes ? `<p style="font-size:12.5px;color:rgba(255,255,255,0.5);margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;">${d.clinical_notes}</p>` : ''}
+      </div>` : ''}`;
+}
+
+async function runDrugCheck() {
+  const panel = document.getElementById('drug-output');
+  panel.querySelector('.ai-panel-body').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Checking drug interactions...</div>';
+  const res = await MediCare.aiRequest('doctor', 'drug_interaction', { medicines: document.getElementById('drug-list').value, conditions: document.getElementById('drug-conditions').value });
+  if (!res.success || !res.data) { panel.querySelector('.ai-panel-body').innerHTML = '<p style="color:rgba(255,255,255,0.5);">Unavailable.</p>'; return; }
+  const d = res.data;
+  const safeHtml = d.safe_to_prescribe ? '<div style="padding:10px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:var(--green-500);font-weight:600;margin-bottom:14px;"><i class="fa-solid fa-circle-check"></i> Safe to prescribe — no critical interactions found</div>' : '<div style="padding:10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:var(--red-500);font-weight:600;margin-bottom:14px;"><i class="fa-solid fa-triangle-exclamation"></i> CAUTION — interactions detected, review before prescribing</div>';
+  const interactionHtml = (d.interactions||[]).map(ix => `
+    <div style="padding:12px;background:${ix.severity==='High'?'rgba(239,68,68,0.1)':'rgba(245,158,11,0.1)'};border:1px solid ${ix.severity==='High'?'rgba(239,68,68,0.3)':'rgba(245,158,11,0.3)'};border-radius:10px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span class="tag ${ix.severity==='High'?'red':'amber'}">${ix.severity}</span><span style="font-weight:600;color:white;">${(ix.drugs||[]).join(' + ')}</span></div>
+      <p style="font-size:13px;color:rgba(255,255,255,0.7);">${ix.description||''}</p>
+    </div>`).join('');
+  panel.querySelector('.ai-panel-body').innerHTML = safeHtml + (interactionHtml || '<p style="color:rgba(255,255,255,0.5);font-size:13px;">No significant interactions found.</p>') + (d.warnings?.length ? `<div style="margin-top:10px;">${d.warnings.map(w=>`<div style="font-size:12.5px;color:var(--amber-300);margin-bottom:4px;">⚠ ${w}</div>`).join('')}</div>` : '');
+}
+
+let soapText = '';
+async function runSOAPGenerator() {
+  document.getElementById('soap-result').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Generating SOAP note...</div>';
+  const res = await MediCare.aiRequest('doctor', 'soap_notes', { subjective: document.getElementById('soap-subjective').value, objective: document.getElementById('soap-objective').value, assessment: document.getElementById('soap-diagnosis').value, plan: document.getElementById('soap-plan').value });
+  if (!res.success || !res.data) { document.getElementById('soap-result').innerHTML = '<p style="color:rgba(255,255,255,0.5);">Unavailable.</p>'; return; }
+  const d = res.data;
+  soapText = `S: ${d.subjective}\nO: ${d.objective}\nA: ${d.assessment}\nP: ${d.plan}`;
+  document.getElementById('soap-result').innerHTML = `
+    ${['subjective','objective','assessment','plan'].map(k => `<div style="padding:14px;background:rgba(255,255,255,0.05);border-left:3px solid var(--teal-500);border-radius:0 10px 10px 0;margin-bottom:10px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal-400);font-weight:700;margin-bottom:5px;">${k.charAt(0).toUpperCase() + k.slice(1)}</div><p style="font-size:13.5px;color:rgba(255,255,255,0.85);line-height:1.6;">${d[k]||''}</p></div>`).join('')}
+    ${d.summary ? `<div style="padding:12px;background:rgba(0,200,194,0.08);border:1px solid rgba(0,200,194,0.2);border-radius:10px;"><p style="font-size:13px;color:var(--teal-300);">${d.summary}</p></div>` : ''}`;
+}
+
+function copySOAP() {
+  if (!soapText) { MediCare.toast('Generate a SOAP note first.', 'warning'); return; }
+  navigator.clipboard.writeText(soapText).then(() => MediCare.toast('SOAP note copied!', 'success'));
+}
+
+// ── Load sections ─────────────────────────────────
+async function loadMyPatients() {
+  const res = await MediCare.API.get('admin.php', { action: 'patients', limit: 50 });
+  if (!res.success) return;
+  document.getElementById('my-patients-body').innerHTML = res.data.map(p => `
+    <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm teal">${MediCare.initials(p.full_name)}</div><div><div style="font-weight:600;">${p.full_name}</div><div style="font-size:12px;color:var(--ink-400);">${p.email}</div></div></div></td>
+    <td>${p.gender||'—'}</td><td><span class="tag red">${p.blood_group||'—'}</span></td><td>${p.phone||'—'}</td><td>${MediCare.formatDate(p.created_at)}</td>
+    <td><button class="btn btn-teal btn-sm" onclick="showSection('consult')"><i class="fa-solid fa-stethoscope"></i> Consult</button></td></tr>`).join('');
+}
+
+async function loadDocAppointments() {
+  const date = document.getElementById('doc-apt-date')?.value || '';
+  const res = await MediCare.API.get('appointments.php', { role: 'doctor', doctor_id: user?.id || 1, date });
+  if (!res.success) return;
+  document.getElementById('doc-apts-body').innerHTML = res.data.map(a => `
+    <tr><td style="font-family:var(--font-mono);font-weight:700;">#${a.token_number}</td>
+    <td style="font-weight:600;">${a.patient_name}</td>
+    <td style="font-size:12.5px;">${MediCare.formatDate(a.appointment_date)} · ${MediCare.formatTime(a.appointment_time)}</td>
+    <td style="color:var(--ink-500);">${a.chief_complaint||'—'}</td>
+    <td>${MediCare.statusTag(a.status)}</td>
+    <td><span class="tag ${a.ai_priority_score>70?'red':a.ai_priority_score>40?'amber':'green'}">${a.ai_triage_label||'Normal'}</span></td>
+    <td><button class="btn btn-teal btn-sm" onclick="showSection('consult')"><i class="fa-solid fa-stethoscope"></i></button></td></tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);">No appointments.</td></tr>';
+}
+
+async function loadRecords() {
+  const res = await MediCare.API.get('medical.php', { action: 'records', doctor_id: user?.id || 1 });
+  if (!res.success) return;
+  document.getElementById('records-body').innerHTML = res.data.map(r => `
+    <tr><td style="font-weight:600;">${r.patient_name}</td><td>${r.diagnosis||'—'}</td>
+    <td style="color:var(--ink-500);font-size:12.5px;">${r.ai_summary ? r.ai_summary.substring(0,80)+'...' : '—'}</td>
+    <td>${MediCare.statusTag(r.ai_risk_level||'Low')}</td>
+    <td>${r.follow_up_date ? MediCare.formatDate(r.follow_up_date) : '—'}</td>
+    <td style="font-size:12px;color:var(--ink-400);">${MediCare.formatDate(r.created_at)}</td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-400);">No records.</td></tr>';
+}
+
+async function loadPrescriptions() {
+  document.getElementById('rx-body').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-400);">Loading...</td></tr>';
+  const res = await MediCare.API.get('medical.php', { action: 'prescriptions', doctor_id: user?.id || 1 });
+  if (!res.success || !res.data?.length) {
+    document.getElementById('rx-body').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);">No prescriptions found.</td></tr>';
+    return;
+  }
+  document.getElementById('rx-body').innerHTML = res.data.map(p => `
+    <tr>
+      <td style="font-weight:600;">${p.patient_name}</td>
+      <td>${p.medicine_name}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;">${p.dosage}</td>
+      <td>${p.frequency}</td>
+      <td>${p.duration_days ? p.duration_days + ' days' : '—'}</td>
+      <td>${p.ai_interaction_flag ? '<span class="tag red">⚠ Flagged</span>' : '<span class="tag green">Clear</span>'}</td>
+      <td style="font-size:12px;color:var(--ink-400);">${MediCare.formatDate(p.created_at)}</td>
+    </tr>`).join('');
+}
+
+// ── Init ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  MediCare.startClock(document.querySelector('[data-clock]'));
+  user = MediCare.getUser();
+  if (!user) MediCare.setUser({ full_name: 'Dr. User', email: 'doctor@medicare.com', role: 'doctor', id: 1 });
+  user = MediCare.getUser();
+  MediCare.populateUserUI(user);
+  loadTodayAppointments();
+  MediCare.loadNotifications('doctor');
+  MediCare.initChat(document.getElementById('doctor-chat-container'), 'doctor', 'chat');
+});
+</script>
+</body>
+</html>

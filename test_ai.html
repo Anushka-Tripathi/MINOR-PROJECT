@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MediCare Pro — AI Connection Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#0c1f3f; color:white; padding:40px; max-width:800px; margin:0 auto; }
+    h1 { color:#00c8c2; }
+    .card { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:24px; margin:20px 0; }
+    button { padding:12px 24px; background:#00c8c2; color:#0c1f3f; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; margin:6px; }
+    button:hover { background:#00ddd7; }
+    pre { background:rgba(0,0,0,0.4); padding:16px; border-radius:8px; overflow:auto; font-size:13px; white-space:pre-wrap; line-height:1.6; }
+    .ok  { color:#00c8c2; }
+    .err { color:#ef4444; }
+    .warn{ color:#f59e0b; }
+    .label { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,0.4); margin-bottom:8px; }
+  </style>
+</head>
+<body>
+  <h1>🧠 MediCare Pro — AI & API Test Panel</h1>
+  <p style="color:rgba(255,255,255,0.5);">Use this page to verify your Gemini API key, database connection, and path resolution.</p>
+
+  <div class="card">
+    <div class="label">Step 1 — Test Database Connection</div>
+    <button onclick="testDB()">Test MySQL</button>
+    <pre id="out-db">Click to test...</pre>
+  </div>
+
+  <div class="card">
+    <div class="label">Step 0 — Discover Available Models (run this first!)</div>
+    <button onclick="listModels()" style="background:#7b2fff;">List Available Models</button>
+    <pre id="out-models">Click to see which models your API key can access...</pre>
+  </div>
+
+  <div class="card">
+    <div class="label">Step 2 — Test AI API (Gemini)</div>
+    <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:0 0 12px;">
+      If you see <strong style="color:#ef4444;">429 quota exceeded</strong>: your free tier is exhausted for that model.
+      The system auto-tries other models. If all fail, 
+      <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#00c8c2;">get a new API key from AI Studio</a>
+      (it resets daily) or wait 24 hours.
+    </p>
+    <button onclick="testAI('patient', 'health_insights', {patient:'Test', age:30})">Test Patient AI</button>
+    <button onclick="testAI('admin', 'bed_forecast', {beds_occupied:10, beds_total:20})">Test Admin AI</button>
+    <button onclick="testAI('doctor', 'diagnosis_support', {symptoms:'fever, headache', vitals:'BP 130/85, Temp 101F'})">Test Doctor AI</button>
+    <pre id="out-ai">Click to test...</pre>
+  </div>
+
+  <div class="card">
+    <div class="label">Step 3 — Test Chat</div>
+    <button onclick="testAI('patient', 'chat', {message:'Hello, I have a headache'})">Test Patient Chat</button>
+    <button onclick="testAI('doctor', 'chat', {message:'What is the first-line treatment for hypertension?'})">Test Doctor Chat</button>
+    <pre id="out-chat">Click to test...</pre>
+  </div>
+
+  <div class="card">
+    <div class="label">Detected Paths (for debugging)</div>
+    <pre id="out-paths"></pre>
+  </div>
+
+<script>
+  // Show path info on load
+  document.getElementById('out-paths').textContent = JSON.stringify({
+    'window.location.href': window.location.href,
+    'window.location.pathname': window.location.pathname,
+    'Page directory': window.location.href.replace(/[^/]+$/, ''),
+    'api.php URL': window.location.href.replace(/[^/]+$/, '') + 'backend/api/ai.php',
+    'admin.php URL': window.location.href.replace(/[^/]+$/, '') + 'backend/api/admin.php',
+  }, null, 2);
+
+  async function listModels() {
+    const el = document.getElementById('out-models');
+    el.innerHTML = '<span class="warn">⏳ Fetching available models...</span>';
+    const url = window.location.href.replace(/[^/]+$/, '') + 'backend/api/list_models.php';
+    try {
+      const res = await fetch(url);
+      const txt = await res.text();
+      try {
+        const j = JSON.parse(txt);
+        if (j.success) {
+          const names = j.models.map(m => m.name.replace('models/', '')).filter(n => n.includes('gemini'));
+          el.innerHTML = '<span class="ok">✅ Available Gemini models for your key:</span>\n\n' +
+            names.map(n => `  • ${n}`).join('\n') +
+            '\n\n<span class="warn">→ Copy the model name that works and paste it in db.php as GEMINI_MODEL</span>';
+        } else {
+          el.innerHTML = '<span class="err">❌ ' + j.error + '</span>';
+        }
+      } catch {
+        el.innerHTML = '<span class="err">❌ PHP error:\n' + txt.substring(0, 500) + '</span>';
+      }
+    } catch(e) {
+      el.innerHTML = '<span class="err">❌ ' + e.message + '</span>';
+    }
+  }
+
+  async function testDB() {
+    const el = document.getElementById('out-db');
+    el.innerHTML = '<span class="warn">Testing...</span>';
+    const url = window.location.href.replace(/[^/]+$/, '') + 'backend/api/admin.php?action=stats';
+    try {
+      const res = await fetch(url);
+      const txt = await res.text();
+      try {
+        const j = JSON.parse(txt);
+        el.innerHTML = j.success
+          ? '<span class="ok">✅ Database OK!</span>\n' + JSON.stringify(j.stats, null, 2)
+          : '<span class="err">❌ DB Error: ' + (j.error || 'Unknown') + '</span>\n' + JSON.stringify(j, null, 2);
+      } catch {
+        el.innerHTML = '<span class="err">❌ Non-JSON response (PHP error?):\n' + txt.substring(0, 500) + '</span>';
+      }
+    } catch (e) {
+      el.innerHTML = '<span class="err">❌ Fetch failed: ' + e.message + '</span>';
+    }
+  }
+
+  async function testAI(module, feature, payload) {
+    const isChat = feature === 'chat';
+    const el = document.getElementById(isChat ? 'out-chat' : 'out-ai');
+    el.innerHTML = '<span class="warn">⏳ Calling Gemini API...</span>';
+    const url = window.location.href.replace(/[^/]+$/, '') + 'backend/api/ai.php';
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ module, feature, payload }),
+      });
+      const txt = await res.text();
+      try {
+        const j = JSON.parse(txt);
+        if (j.success) {
+          const model = j.model_used ? ` (model: ${j.model_used})` : '';
+          el.innerHTML = '<span class="ok">✅ Gemini API working!' + model + '</span>\n' + JSON.stringify(j.data, null, 2);
+        } else {
+          el.innerHTML = '<span class="err">❌ AI Error: ' + (j.error || 'Unknown') + '</span>\n\nFull response:\n' + JSON.stringify(j, null, 2);
+        }
+      } catch {
+        el.innerHTML = '<span class="err">❌ Non-JSON from ai.php (PHP error):\n' + txt.substring(0, 600) + '</span>';
+      }
+    } catch (e) {
+      el.innerHTML = '<span class="err">❌ Network error: ' + e.message + '\nIs XAMPP running?</span>';
+    }
+  }
+</script>
+</body>
+</html>

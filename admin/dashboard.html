@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | MediCare Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <style>
+    .ward-row { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--card-border); }
+    .ward-row:last-child { border-bottom:none; }
+    .ward-info { flex:1; min-width:0; }
+    .ward-name { font-size:13.5px; font-weight:600; color:var(--ink-900); }
+    .ward-count { font-size:12px; color:var(--ink-400); }
+    .ward-pct { font-size:13px; font-weight:700; font-family:var(--font-mono); width:40px; text-align:right; }
+    .ward-progress-wrap { flex:2; }
+
+    .staff-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--card-border); }
+    .staff-row:last-child { border-bottom:none; }
+    .staff-name { font-size:13.5px; font-weight:600; color:var(--ink-900); }
+    .staff-dept { font-size:12px; color:var(--ink-400); }
+    .stress-pct { font-size:12px; font-weight:700; font-family:var(--font-mono); }
+    .stress-pct.hi { color:var(--red-500); }
+    .stress-pct.mid { color:var(--amber-500); }
+    .stress-pct.lo { color:var(--green-500); }
+
+    .queue-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--card-border); }
+    .queue-row:last-child { border-bottom:none; }
+
+    .activity-item { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--card-border); }
+    .activity-item:last-child { border-bottom:none; }
+    .activity-dot { width:8px; height:8px; border-radius:50%; margin-top:6px; flex-shrink:0; }
+
+    .nav-section { margin-top:8px; }
+    .modal-overlay.hidden { display:none; }
+
+    .chart-wrap { position:relative; height:180px; }
+    #chart-apts { width:100%; height:100%; }
+
+    .insight-card {
+      background:linear-gradient(135deg,rgba(0,200,194,0.1),rgba(29,108,245,0.08));
+      border:1px solid rgba(0,200,194,0.2);
+      border-radius:var(--radius-md);
+      padding:14px 16px;
+    }
+    .tab-group { display:flex; gap:4px; background:var(--ink-100); border-radius:var(--radius-sm); padding:3px; }
+    .tab-btn { flex:1; padding:6px 12px; border:none; background:transparent; border-radius:7px; font-size:12.5px; font-weight:600; color:var(--ink-500); cursor:pointer; transition:all .15s; }
+    .tab-btn.active { background:white; color:var(--ink-900); box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a href="../index.html" style="display:contents;">
+        <div class="sidebar-logo"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div class="sidebar-brand-text"><strong>MediCare Pro</strong><small>Admin Module</small></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Operations</span>
+      <a class="nav-link active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-pie"></i> Command Centre</a>
+      <a class="nav-link" onclick="showSection('analytics')"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+      <a class="nav-link" onclick="showSection('beds')"><i class="fa-solid fa-bed-pulse"></i> Bed Management</a>
+      <a class="nav-link" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-days"></i> Appointments</a>
+      <span class="nav-section-label">People</span>
+      <a class="nav-link" onclick="showSection('doctors')"><i class="fa-solid fa-user-doctor"></i> Doctors</a>
+      <a class="nav-link" onclick="showSection('patients')"><i class="fa-solid fa-users"></i> Patients</a>
+      <a class="nav-link" onclick="showSection('staff')"><i class="fa-solid fa-users-gear"></i> Staff Rostering</a>
+      <span class="nav-section-label">Finance & AI</span>
+      <a class="nav-link" onclick="showSection('billing')"><i class="fa-solid fa-file-invoice-dollar"></i> Billing</a>
+      <a class="nav-link" onclick="showSection('insurance')"><i class="fa-solid fa-file-shield"></i> Insurance Desk</a>
+      <a class="nav-link" onclick="showSection('ai-centre')"><i class="fa-solid fa-brain"></i> AI Command Centre</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" data-user-initials>AD</div>
+        <div class="sidebar-user-info"><strong data-user-name>Admin User</strong><small>Administrator</small></div>
+        <button onclick="MediCare.logout()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:14px;" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-breadcrumb" id="breadcrumb">Command Centre</span>
+      <span class="topbar-title" id="page-title">Admin Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-400);" data-clock></span>
+      <div class="status-dot">AI Active</div>
+      <button class="topbar-btn" onclick="showSection('ai-centre')" title="AI Centre"><i class="fa-solid fa-brain"></i></button>
+      <button class="topbar-btn" id="notif-btn" title="Notifications" onclick="MediCare.toggleNotifications('admin')"><i class="fa-regular fa-bell"></i><span class="badge" id="notif-badge" style="display:none;">0</span></button>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <section id="sec-dashboard">
+      <div class="page-header">
+        <div><h1>Command Centre</h1><p>Live hospital operations overview with AI monitoring</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="loadStats()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="showSection('ai-centre')"><i class="fa-solid fa-sparkles"></i> AI Insights</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-users"></i></div><div class="stat-body"><div class="stat-label">Total Patients</div><div class="stat-value" id="s-patients">—</div><div class="stat-change neutral">Registered</div></div></div>
+        <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-user-doctor"></i></div><div class="stat-body"><div class="stat-label">Active Doctors</div><div class="stat-value" id="s-doctors">—</div><div class="stat-change neutral">On staff</div></div></div>
+        <div class="stat-card"><div class="stat-icon amber"><i class="fa-solid fa-calendar-day"></i></div><div class="stat-body"><div class="stat-label">Today's Appts</div><div class="stat-value" id="s-apts">—</div><div class="stat-change neutral">Scheduled</div></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-indian-rupee-sign"></i></div><div class="stat-body"><div class="stat-label">Month Revenue</div><div class="stat-value" id="s-revenue">—</div><div class="stat-change up">↑ This month</div></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-bed-pulse"></i></div><div class="stat-body"><div class="stat-label">Bed Occupancy</div><div class="stat-value" id="s-beds">—</div><div class="stat-change neutral" id="s-beds-sub">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-file-invoice-dollar"></i></div><div class="stat-body"><div class="stat-label">Pending Bills</div><div class="stat-value" id="s-bills">—</div><div class="stat-change warning">Needs action</div></div></div>
+        <div class="stat-card"><div class="stat-icon navy"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="stat-body"><div class="stat-label">Critical Alerts</div><div class="stat-value" id="s-alerts">—</div><div class="stat-change down">AI flagged</div></div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="showSection('ai-centre')">
+          <div class="stat-icon teal"><i class="fa-solid fa-brain"></i></div>
+          <div class="stat-body"><div class="stat-label">AI Features</div><div class="stat-value" style="font-size:20px;color:var(--teal-500);">15+ Active</div><div class="stat-change neutral">Click to open</div></div>
+        </div>
+      </div>
+
+      <!-- Row 1 -->
+      <div class="content-grid cols-2">
+        <!-- Appointments Chart -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">Weekly Appointments</div><div class="panel-subtitle">Last 7 days trend</div></div>
+            <span class="tag blue">Analytics</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="chart-apts"></canvas></div>
+          </div>
+        </div>
+        <!-- Dept Breakdown -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">Department Load</div><div class="panel-subtitle">Appointment distribution</div></div>
+            <span class="tag teal">Live</span>
+          </div>
+          <div class="panel-body" id="dept-breakdown">
+            <div class="empty-state"><i class="fa-solid fa-chart-pie"></i><p>Loading...</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="content-grid cols-2">
+        <!-- AI Bed Engine -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-bed-pulse"></i></div>AI Bed Prediction Engine</div>
+            <div class="ai-chip"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Live Forecast</div>
+          </div>
+          <div class="ai-panel-body">
+            <div id="bed-forecast-content">
+              <div class="ai-loading"><div class="ai-spinner"></div>Running bed prediction model...</div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="margin-top:14px;color:var(--teal-400);border-color:rgba(0,200,194,0.3);background:rgba(0,200,194,0.08);" onclick="runBedForecast()"><i class="fa-solid fa-rotate"></i> Re-run Forecast</button>
+          </div>
+        </div>
+        <!-- Staff Pressure -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-users-gear"></i></div>Staff Workload Monitor</div>
+            <div class="ai-chip">AI Allocation</div>
+          </div>
+          <div class="ai-panel-body">
+            <div id="staff-pressure-content">
+              <div class="ai-loading"><div class="ai-spinner"></div>Analyzing staff workload...</div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="margin-top:14px;color:var(--teal-400);border-color:rgba(0,200,194,0.3);background:rgba(0,200,194,0.08);" onclick="runStaffOptimization()"><i class="fa-solid fa-sparkles"></i> Optimize Allocation</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="content-grid cols-2">
+        <!-- Recent Appointments -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Recent Appointments</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('appointments')">View All</button>
+          </div>
+          <div class="panel-body" style="padding:0;">
+            <table class="data-table" id="recent-apts-table">
+              <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody id="recent-apts-body"><tr><td colspan="4" style="text-align:center;padding:24px;color:var(--ink-400);">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Billing Queue -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Billing AI Fraud Monitor</div>
+            <div class="ai-chip"><i class="fa-solid fa-brain"></i> AI Scanning</div>
+          </div>
+          <div class="panel-body">
+            <div id="billing-fraud-content">
+              <div class="ai-loading"><div class="ai-spinner"></div>Scanning billing records for anomalies...</div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="margin-top:14px;" onclick="runBillingAudit()"><i class="fa-solid fa-magnifying-glass"></i> Run Full Audit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ DOCTORS ═══════════ -->
+    <section id="sec-doctors" class="hidden">
+      <div class="page-header">
+        <div><h1>Doctors</h1><p>Manage medical staff and specialists</p></div>
+        <div style="display:flex;gap:8px;">
+          <div class="search-bar" style="width:240px;"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="doc-search" placeholder="Search doctors..." oninput="searchDoctors()"></div>
+          <button class="btn btn-primary" onclick="MediCare.openModal('modal-add-doctor')"><i class="fa-solid fa-plus"></i> Add Doctor</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Doctor</th><th>Department</th><th>Specialization</th><th>Experience</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="doctors-table-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);"><div class="ai-spinner" style="margin:auto;border:2px solid var(--ink-200);border-top-color:var(--blue-500);"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ PATIENTS ═══════════ -->
+    <section id="sec-patients" class="hidden">
+      <div class="page-header">
+        <div><h1>Patients</h1><p>All registered patients</p></div>
+        <div style="display:flex;gap:8px;">
+          <div class="search-bar" style="width:240px;"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="pat-search" placeholder="Search patients..." oninput="searchPatients()"></div>
+          <button class="btn btn-primary" onclick="MediCare.openModal('modal-add-patient')"><i class="fa-solid fa-user-plus"></i> Add Patient</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Patient</th><th>Gender</th><th>Blood Group</th><th>Phone</th><th>City</th><th>Registered</th><th>Actions</th></tr></thead>
+            <tbody id="patients-table-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);"><div class="ai-spinner" style="margin:auto;border:2px solid var(--ink-200);border-top-color:var(--blue-500);"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ BEDS ═══════════ -->
+    <section id="sec-beds" class="hidden">
+      <div class="page-header">
+        <div><h1>Bed Management</h1><p>Real-time ward occupancy and AI discharge predictions</p></div>
+        <button class="btn btn-primary btn-sm" onclick="runBedForecast();showSection('ai-centre')"><i class="fa-solid fa-brain"></i> AI Forecast</button>
+      </div>
+      <div class="stats-grid" id="bed-stats" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-bed"></i></div><div class="stat-body"><div class="stat-label">Available</div><div class="stat-value" id="b-available">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-bed-pulse"></i></div><div class="stat-body"><div class="stat-label">Occupied</div><div class="stat-value" id="b-occupied">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div><div class="stat-body"><div class="stat-label">Reserved</div><div class="stat-value" id="b-reserved">—</div></div></div>
+        <div class="stat-card"><div class="stat-icon navy"><i class="fa-solid fa-wrench"></i></div><div class="stat-body"><div class="stat-label">Maintenance</div><div class="stat-value" id="b-maintenance">—</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Bed No.</th><th>Ward Type</th><th>Department</th><th>Status</th><th>Patient</th><th>Daily Rate</th><th>Action</th></tr></thead>
+            <tbody id="beds-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ APPOINTMENTS ═══════════ -->
+    <section id="sec-appointments" class="hidden">
+      <div class="page-header">
+        <div><h1>Appointments</h1><p>All scheduled appointments</p></div>
+        <div style="display:flex;gap:8px;">
+          <input type="date" class="form-control" id="filter-date" onchange="loadAppointments()" style="width:160px;">
+          <select class="form-control" id="filter-status" onchange="loadAppointments()" style="width:150px;">
+            <option value="">All Status</option>
+            <option>Scheduled</option><option>Confirmed</option><option>In Progress</option><option>Completed</option><option>Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Token</th><th>Patient</th><th>Doctor</th><th>Date & Time</th><th>Type</th><th>Status</th><th>Priority</th><th>Action</th></tr></thead>
+            <tbody id="apts-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ BILLING ═══════════ -->
+    <section id="sec-billing" class="hidden">
+      <div class="page-header">
+        <div><h1>Billing</h1><p>Payment management and AI fraud detection</p></div>
+        <div style="display:flex;gap:8px;">
+          <select class="form-control" id="bill-filter" onchange="loadBilling()" style="width:160px;">
+            <option value="">All Bills</option><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Partial">Partial</option>
+          </select>
+          <button class="btn btn-primary" onclick="MediCare.openModal('modal-add-bill')"><i class="fa-solid fa-plus"></i> New Bill</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Bill No.</th><th>Patient</th><th>Total</th><th>Paid</th><th>Method</th><th>Status</th><th>AI Flag</th><th>Date</th></tr></thead>
+            <tbody id="billing-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ STAFF ═══════════ -->
+    <section id="sec-staff" class="hidden">
+      <div class="page-header">
+        <div><h1>Staff Rostering</h1><p>AI-optimized shift management</p></div>
+        <button class="btn btn-primary" onclick="MediCare.openModal('modal-add-staff')"><i class="fa-solid fa-user-plus"></i> Add Staff</button>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Staff Member</th><th>Role</th><th>Department</th><th>Shift</th><th>Workload</th><th>Status</th></tr></thead>
+            <tbody id="staff-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ AI COMMAND CENTRE ═══════════ -->
+    <section id="sec-ai-centre" class="hidden">
+      <div class="page-header">
+        <div><h1>AI Command Centre</h1><p>All AI-powered features for hospital operations</p></div>
+        <div class="status-dot">AI Online</div>
+      </div>
+
+      <div class="content-grid cols-2">
+        <!-- Bed Forecast -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-bed-pulse"></i></div>Bed Prediction Engine</div>
+            <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runBedForecast()"><i class="fa-solid fa-rotate"></i> Run</button>
+          </div>
+          <div class="ai-panel-body" id="ai-bed-forecast"><div class="ai-loading"><div class="ai-spinner"></div>Click Run to generate forecast</div></div>
+        </div>
+
+        <!-- Staff Optimization -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-users-gear"></i></div>Staff Optimizer</div>
+            <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runStaffOptimization()"><i class="fa-solid fa-sparkles"></i> Analyze</button>
+          </div>
+          <div class="ai-panel-body" id="ai-staff-opt"><div class="ai-loading"><div class="ai-spinner"></div>Click Analyze to optimize</div></div>
+        </div>
+
+        <!-- Billing Audit -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>Billing Fraud Detector</div>
+            <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runBillingAudit()"><i class="fa-solid fa-magnifying-glass"></i> Scan</button>
+          </div>
+          <div class="ai-panel-body" id="ai-billing-audit"><div class="ai-loading"><div class="ai-spinner"></div>Click Scan to start audit</div></div>
+        </div>
+
+        <!-- Analytics Summary -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-chart-line"></i></div>Executive Analytics</div>
+            <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runAnalyticsSummary()"><i class="fa-solid fa-brain"></i> Generate</button>
+          </div>
+          <div class="ai-panel-body" id="ai-analytics"><div class="ai-loading"><div class="ai-spinner"></div>Click Generate for summary</div></div>
+        </div>
+      </div>
+
+      <!-- AI Chat -->
+      <div class="ai-panel">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-comments"></i></div>Admin AI Chat Assistant</div>
+          <div class="ai-chip">GPT-powered</div>
+        </div>
+        <div class="ai-panel-body" style="padding:0;" id="ai-chat-wrap">
+          <div class="chat-container">
+            <div class="chat-messages" id="admin-chat-messages"></div>
+            <div class="chat-input-area">
+              <input class="chat-input" id="admin-chat-input" placeholder="Ask about hospital operations, analytics, or get AI recommendations...">
+              <button class="chat-send-btn" id="admin-chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ ANALYTICS ═══════════ -->
+    <section id="sec-analytics" class="hidden">
+      <div class="page-header"><div><h1>Analytics</h1><p>Hospital performance metrics and AI insights</p></div></div>
+      <div class="content-grid cols-2">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Appointment Trends</div><span class="tag blue">7 Days</span></div>
+          <div class="panel-body"><div class="chart-wrap"><canvas id="analytics-chart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Department Distribution</div><span class="tag teal">All Depts</span></div>
+          <div class="panel-body" id="analytics-dept"></div>
+        </div>
+      </div>
+      <div class="ai-panel" style="margin-top:20px;">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-chart-line"></i></div>AI Executive Summary</div>
+          <button class="btn btn-sm" style="background:rgba(0,200,194,0.15);color:var(--teal-400);border:1px solid rgba(0,200,194,0.3);" onclick="runAnalyticsSummary()"><i class="fa-solid fa-brain"></i> Generate</button>
+        </div>
+        <div class="ai-panel-body" id="analytics-summary-panel"><div class="ai-loading"><div class="ai-spinner"></div>Click Generate for AI executive summary</div></div>
+      </div>
+    </section>
+
+    <!-- ═══════════ INSURANCE ═══════════ -->
+    <section id="sec-insurance" class="hidden">
+      <div class="page-header"><div><h1>Insurance Desk</h1><p>Automated claim verification and AI approval scoring</p></div></div>
+      <div class="ai-panel">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title"><div class="ai-panel-icon"><i class="fa-solid fa-file-shield"></i></div>AI Insurance Verification</div>
+          <div class="ai-chip">Automated</div>
+        </div>
+        <div class="ai-panel-body">
+          <div class="form-grid cols-3" style="margin-bottom:16px;">
+            <div class="form-group"><label class="form-label">Patient Name</label><input class="form-control" id="ins-patient" placeholder="Enter patient name"></div>
+            <div class="form-group"><label class="form-label">Insurance Provider</label><input class="form-control" id="ins-provider" placeholder="e.g. Star Health"></div>
+            <div class="form-group"><label class="form-label">Policy Number</label><input class="form-control" id="ins-policy" placeholder="Policy number"></div>
+            <div class="form-group"><label class="form-label">Claim Amount (₹)</label><input class="form-control" id="ins-amount" type="number" placeholder="0.00"></div>
+            <div class="form-group"><label class="form-label">Procedure</label><input class="form-control" id="ins-procedure" placeholder="e.g. Cardiac bypass"></div>
+            <div class="form-group" style="align-self:end;"><button class="btn btn-teal w-full" onclick="runInsuranceVerification()"><i class="fa-solid fa-sparkles"></i> Verify with AI</button></div>
+          </div>
+          <div id="insurance-result"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- Add Doctor Modal -->
+<div class="modal-overlay hidden" id="modal-add-doctor">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add New Doctor</div><button class="modal-close" onclick="MediCare.closeModal('modal-add-doctor')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input class="form-control" id="doc-name" placeholder="Dr. Full Name"></div>
+        <div class="form-group"><label class="form-label">Email <span class="req">*</span></label><input class="form-control" id="doc-email" type="email" placeholder="doctor@medicare.com"></div>
+        <div class="form-group"><label class="form-label">Password <span class="req">*</span></label><input class="form-control" id="doc-pass" type="password" placeholder="Min 6 chars"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-control" id="doc-phone" placeholder="+91 XXXXX XXXXX"></div>
+        <div class="form-group"><label class="form-label">Department <span class="req">*</span></label>
+          <select class="form-control" id="doc-dept"><option value="">Select...</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Specialization <span class="req">*</span></label><input class="form-control" id="doc-spec" placeholder="e.g. Cardiologist"></div>
+        <div class="form-group"><label class="form-label">Qualification</label><input class="form-control" id="doc-qual" placeholder="e.g. MBBS, MD"></div>
+        <div class="form-group"><label class="form-label">Experience (years)</label><input class="form-control" id="doc-exp" type="number" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">License No.</label><input class="form-control" id="doc-license" placeholder="MCI-XXXX-000"></div>
+        <div class="form-group"><label class="form-label">Consultation Fee (₹)</label><input class="form-control" id="doc-fee" type="number" placeholder="500"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="MediCare.closeModal('modal-add-doctor')">Cancel</button>
+      <button class="btn btn-primary" onclick="addDoctor()"><i class="fa-solid fa-user-plus"></i> Add Doctor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div class="modal-overlay hidden" id="modal-add-patient">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Register New Patient</div><button class="modal-close" onclick="MediCare.closeModal('modal-add-patient')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input class="form-control" id="pat-name" placeholder="Patient full name"></div>
+        <div class="form-group"><label class="form-label">Email <span class="req">*</span></label><input class="form-control" id="pat-email" type="email"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-control" id="pat-phone"></div>
+        <div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" id="pat-dob" type="date"></div>
+        <div class="form-group"><label class="form-label">Gender</label><select class="form-control" id="pat-gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="form-group"><label class="form-label">Blood Group</label><select class="form-control" id="pat-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
+        <div class="form-group" style="grid-column:span 2;"><label class="form-label">Address</label><input class="form-control" id="pat-address"></div>
+        <div class="form-group"><label class="form-label">City</label><input class="form-control" id="pat-city"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="MediCare.closeModal('modal-add-patient')">Cancel</button>
+      <button class="btn btn-primary" onclick="addPatient()"><i class="fa-solid fa-user-plus"></i> Register Patient</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/medicare.js"></script>
+<script>
+// ── Section Navigation ──────────────────────────────
+const sections = ['dashboard','doctors','patients','beds','appointments','billing','staff','ai-centre','analytics','insurance'];
+const sectionTitles = { dashboard:'Command Centre', doctors:'Doctors', patients:'Patients', beds:'Bed Management', appointments:'Appointments', billing:'Billing', staff:'Staff Rostering', 'ai-centre':'AI Command Centre', analytics:'Analytics', insurance:'Insurance Desk' };
+
+function showSection(name) {
+  sections.forEach(s => {
+    const el = document.getElementById('sec-' + s);
+    if (el) el.classList.toggle('hidden', s !== name);
+  });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const active = [...document.querySelectorAll('.nav-link')].find(l => l.getAttribute('onclick')?.includes(`'${name}'`));
+  if (active) active.classList.add('active');
+  document.getElementById('page-title').textContent = sectionTitles[name] || name;
+  document.getElementById('breadcrumb').textContent = sectionTitles[name] || name;
+
+  // Lazy load
+  if (name === 'doctors')      loadDoctors();
+  if (name === 'patients')     loadPatients();
+  if (name === 'beds')         loadBeds();
+  if (name === 'appointments') loadAppointments();
+  if (name === 'billing')      loadBilling();
+  if (name === 'staff')        loadStaff();
+  if (name === 'analytics')    { loadStats(); runAnalyticsSummary(); }
+}
+
+// ── Stats ────────────────────────────────────────────
+async function loadStats() {
+  const res = await MediCare.API.get('admin.php', { action: 'stats' });
+  if (!res.success) return;
+  const s = res.stats;
+  document.getElementById('s-patients').textContent = s.total_patients;
+  document.getElementById('s-doctors').textContent  = s.total_doctors;
+  document.getElementById('s-apts').textContent     = s.today_apts;
+  document.getElementById('s-revenue').textContent  = '₹' + (s.month_revenue/1000).toFixed(1) + 'k';
+  document.getElementById('s-beds').textContent     = s.bed_occupancy + '%';
+  document.getElementById('s-beds-sub').textContent = s.beds_occupied + ' / ' + s.beds_total + ' beds';
+  document.getElementById('s-bills').textContent    = s.pending_bills;
+  document.getElementById('s-alerts').textContent   = s.critical_alerts;
+
+  // Weekly chart
+  if (res.weekly_apts?.length) {
+    const labels = res.weekly_apts.map(r => new Date(r.appointment_date).toLocaleDateString('en-IN',{weekday:'short'}));
+    const values = res.weekly_apts.map(r => parseInt(r.count));
+    setTimeout(() => { MediCare.drawBarChart('chart-apts', labels, values, '#1d6cf5'); MediCare.drawBarChart('analytics-chart', labels, values, '#00c8c2'); }, 100);
+  }
+
+  // Dept breakdown
+  if (res.dept_breakdown?.length) {
+    const html = res.dept_breakdown.map(d => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--card-border);">
+        <span style="flex:1;font-size:13.5px;font-weight:600;">${d.name || 'General'}</span>
+        <div style="flex:2;"><div class="progress-bar"><div class="progress-fill blue" style="width:${Math.min((d.count/Math.max(...res.dept_breakdown.map(x=>x.count)))*100,100)}%"></div></div></div>
+        <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;width:30px;text-align:right;">${d.count}</span>
+      </div>`).join('');
+    document.getElementById('dept-breakdown').innerHTML = html;
+    document.getElementById('analytics-dept').innerHTML = html;
+  }
+
+  // Recent apts
+  if (res.recent_apts?.length) {
+    document.getElementById('recent-apts-body').innerHTML = res.recent_apts.map(a => `
+      <tr>
+        <td><span style="font-weight:600;">${a.patient}</span></td>
+        <td style="color:var(--ink-500);">${a.doctor}</td>
+        <td style="font-family:var(--font-mono);font-size:12px;">${MediCare.formatDate(a.appointment_date)}</td>
+        <td>${MediCare.statusTag(a.status)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ── Doctors ─────────────────────────────────────────
+let allDoctors = [];
+async function loadDoctors() {
+  const res = await MediCare.API.get('admin.php', { action: 'doctors' });
+  if (!res.success) return;
+  allDoctors = res.data;
+  renderDoctors(allDoctors);
+}
+function renderDoctors(doctors) {
+  document.getElementById('doctors-table-body').innerHTML = doctors.length ? doctors.map(d => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm teal">${MediCare.initials(d.full_name)}</div><div><div style="font-weight:600;">${d.full_name}</div><div style="font-size:12px;color:var(--ink-400);">${d.email}</div></div></div></td>
+      <td>${d.department || '—'}</td>
+      <td>${d.specialization}</td>
+      <td>${d.experience_years} yrs</td>
+      <td>${MediCare.currency(d.consultation_fee)}</td>
+      <td>${d.is_active ? '<span class="tag green">Active</span>' : '<span class="tag neutral">Inactive</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm"><i class="fa-solid fa-pen"></i></button></td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);">No doctors found.</td></tr>';
+}
+function searchDoctors() {
+  const q = document.getElementById('doc-search').value.toLowerCase();
+  renderDoctors(allDoctors.filter(d => d.full_name.toLowerCase().includes(q) || d.specialization.toLowerCase().includes(q)));
+}
+async function addDoctor() {
+  const body = { full_name: document.getElementById('doc-name').value, email: document.getElementById('doc-email').value, password: document.getElementById('doc-pass').value, phone: document.getElementById('doc-phone').value, department_id: document.getElementById('doc-dept').value, specialization: document.getElementById('doc-spec').value, qualification: document.getElementById('doc-qual').value, experience_years: document.getElementById('doc-exp').value, license_number: document.getElementById('doc-license').value, consultation_fee: document.getElementById('doc-fee').value };
+  const res = await MediCare.API.post('admin.php?action=doctors', body);
+  if (res.success) { MediCare.toast('Doctor added successfully!', 'success'); MediCare.closeModal('modal-add-doctor'); loadDoctors(); }
+  else MediCare.toast(res.error || 'Failed to add doctor.', 'error');
+}
+
+// ── Patients ─────────────────────────────────────────
+let allPatients = [];
+async function loadPatients() {
+  const res = await MediCare.API.get('admin.php', { action: 'patients', limit: 50 });
+  if (!res.success) return;
+  allPatients = res.data;
+  renderPatients(allPatients);
+}
+function renderPatients(patients) {
+  document.getElementById('patients-table-body').innerHTML = patients.length ? patients.map(p => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm blue">${MediCare.initials(p.full_name)}</div><div><div style="font-weight:600;">${p.full_name}</div><div style="font-size:12px;color:var(--ink-400);">${p.email}</div></div></div></td>
+      <td>${p.gender || '—'}</td>
+      <td><span class="tag red">${p.blood_group || '—'}</span></td>
+      <td style="font-family:var(--font-mono);">${p.phone || '—'}</td>
+      <td>${p.city || '—'}</td>
+      <td style="font-size:12px;color:var(--ink-400);">${MediCare.formatDate(p.created_at)}</td>
+      <td><button class="btn btn-ghost btn-sm"><i class="fa-solid fa-eye"></i></button></td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-400);">No patients found.</td></tr>';
+}
+function searchPatients() {
+  const q = document.getElementById('pat-search').value.toLowerCase();
+  renderPatients(allPatients.filter(p => p.full_name.toLowerCase().includes(q) || (p.phone||'').includes(q)));
+}
+async function addPatient() {
+  const body = { full_name: document.getElementById('pat-name').value, email: document.getElementById('pat-email').value, phone: document.getElementById('pat-phone').value, dob: document.getElementById('pat-dob').value, gender: document.getElementById('pat-gender').value, blood_group: document.getElementById('pat-blood').value, address: document.getElementById('pat-address').value, city: document.getElementById('pat-city').value };
+  const res = await MediCare.API.post('admin.php?action=patients', body);
+  if (res.success) { MediCare.toast('Patient registered!', 'success'); MediCare.closeModal('modal-add-patient'); loadPatients(); }
+  else MediCare.toast(res.error || 'Failed.', 'error');
+}
+
+// ── Beds ─────────────────────────────────────────────
+async function loadBeds() {
+  const res = await MediCare.API.get('admin.php', { action: 'beds' });
+  if (!res.success) return;
+  const beds = res.data;
+  const counts = { Available: 0, Occupied: 0, Reserved: 0, Maintenance: 0 };
+  beds.forEach(b => { if (counts[b.status] !== undefined) counts[b.status]++; });
+  document.getElementById('b-available').textContent  = counts.Available;
+  document.getElementById('b-occupied').textContent   = counts.Occupied;
+  document.getElementById('b-reserved').textContent   = counts.Reserved;
+  document.getElementById('b-maintenance').textContent= counts.Maintenance;
+  document.getElementById('beds-table-body').innerHTML = beds.map(b => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-weight:700;">${b.bed_number}</td>
+      <td>${b.ward_type}</td>
+      <td>${b.department}</td>
+      <td>${MediCare.statusTag(b.status)}</td>
+      <td>${b.patient_name || '<span style="color:var(--ink-400);">—</span>'}</td>
+      <td>${MediCare.currency(b.daily_charge)}/day</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="updateBed(${b.id},'${b.status}')"><i class="fa-solid fa-pen"></i></button></td>
+    </tr>`).join('');
+}
+
+// ── Appointments ──────────────────────────────────────
+async function loadAppointments() {
+  const date   = document.getElementById('filter-date')?.value || '';
+  const status = document.getElementById('filter-status')?.value || '';
+  const res = await MediCare.API.get('appointments.php', { role: 'admin', date, status });
+  if (!res.success) return;
+  document.getElementById('apts-table-body').innerHTML = res.data.map(a => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-weight:700;">#${a.token_number || '—'}</td>
+      <td><span style="font-weight:600;">${a.patient_name}</span></td>
+      <td>${a.doctor_name}</td>
+      <td style="font-size:12.5px;">${MediCare.formatDate(a.appointment_date)} · ${MediCare.formatTime(a.appointment_time)}</td>
+      <td><span class="tag navy">${a.type}</span></td>
+      <td>${MediCare.statusTag(a.status)}</td>
+      <td><span class="tag ${a.ai_priority_score > 70 ? 'red' : a.ai_priority_score > 40 ? 'amber' : 'green'}">${a.ai_triage_label || 'Normal'}</span></td>
+      <td><button class="btn btn-ghost btn-sm"><i class="fa-solid fa-pen"></i></button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-400);">No appointments found.</td></tr>';
+}
+
+// ── Billing ───────────────────────────────────────────
+async function loadBilling() {
+  const status = document.getElementById('bill-filter')?.value || '';
+  const res = await MediCare.API.get('admin.php', { action: 'billing', status });
+  if (!res.success) return;
+  document.getElementById('billing-table-body').innerHTML = res.data.map(b => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-size:12px;">${b.bill_number}</td>
+      <td style="font-weight:600;">${b.patient_name}</td>
+      <td style="font-weight:700;">${MediCare.currency(b.total_amount)}</td>
+      <td>${MediCare.currency(b.paid_amount)}</td>
+      <td>${b.payment_method}</td>
+      <td>${MediCare.statusTag(b.payment_status)}</td>
+      <td>${b.ai_fraud_flag ? '<span class="tag red"><i class="fa-solid fa-triangle-exclamation"></i> Flagged</span>' : '<span class="tag green">Clear</span>'}</td>
+      <td style="font-size:12px;color:var(--ink-400);">${MediCare.formatDate(b.created_at)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-400);">No bills found.</td></tr>';
+}
+
+// ── Staff ─────────────────────────────────────────────
+async function loadStaff() {
+  const res = await MediCare.API.get('admin.php', { action: 'staff' });
+  if (!res.success) return;
+  document.getElementById('staff-table-body').innerHTML = res.data.map(s => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm purple">${MediCare.initials(s.full_name)}</div><div><div style="font-weight:600;">${s.full_name}</div><div style="font-size:12px;color:var(--ink-400);">${s.email || ''}</div></div></div></td>
+      <td>${s.role}</td>
+      <td>${s.department || '—'}</td>
+      <td><span class="tag ${s.shift==='Night'?'navy':'blue'}">${s.shift}</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill ${s.workload_score>80?'red':s.workload_score>60?'amber':'green'}" style="width:${s.workload_score}%"></div></div><span style="font-size:12px;font-family:var(--font-mono);">${s.workload_score}%</span></div></td>
+      <td>${s.is_active ? '<span class="tag green">Active</span>' : '<span class="tag neutral">Inactive</span>'}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-400);">No staff found.</td></tr>';
+}
+
+// ── AI Features ───────────────────────────────────────
+async function runBedForecast() {
+  const targets = ['bed-forecast-content', 'ai-bed-forecast'];
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Running bed prediction model...</div>'; });
+  const res = await MediCare.aiRequest('admin', 'bed_forecast', { beds_occupied: 87, beds_total: 115, icu_occupied: 46, icu_total: 50, general_occupied: 118, general_total: 160, emergency_occupied: 32, emergency_total: 40, time_of_day: new Date().getHours() });
+  const html = res.success && res.data ? renderBedForecast(res.data) : '<p style="color:rgba(255,255,255,0.5);">Could not generate forecast. Check AI API key.</p>';
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
+function renderBedForecast(data) {
+  const wards = [
+    { name: 'ICU', occ: 46, total: 50, prediction: data.icu_prediction || 'Stable', color: 'red' },
+    { name: 'General', occ: 118, total: 160, prediction: data.general_prediction || 'Stable', color: 'blue' },
+    { name: 'Emergency', occ: 32, total: 40, prediction: data.emergency_prediction || 'Stable', color: 'amber' },
+  ];
+  const wardHtml = wards.map(w => {
+    const pct = Math.round((w.occ / w.total) * 100);
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+        <span style="font-weight:600;color:white;">${w.name}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:rgba(255,255,255,0.5);">${w.occ}/${w.total}</span>
+          <span class="tag ${w.color}" style="font-size:10px;">${w.prediction}</span>
+        </div>
+      </div>
+      <div class="progress-bar dark"><div class="progress-fill ${w.color}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  return wardHtml + `<div class="insight-card" style="margin-top:14px;"><p style="font-size:13px;color:rgba(255,255,255,0.8);line-height:1.6;">${data.forecast_summary || 'Forecast generated successfully.'}</p>${data.recommended_actions?.length ? '<div style="margin-top:10px;">' + data.recommended_actions.map(a => `<div style="font-size:12px;color:var(--teal-300);margin-top:4px;">→ ${a}</div>`).join('') + '</div>' : ''}</div>`;
+}
+
+async function runStaffOptimization() {
+  const targets = ['staff-pressure-content', 'ai-staff-opt'];
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Analyzing staff workload...</div>'; });
+  const res = await MediCare.aiRequest('admin', 'staff_optimization', { total_staff: 128, overloaded_threshold: 85, departments: ['ICU', 'Emergency', 'General', 'OPD'], current_time: new Date().toLocaleTimeString() });
+  const d = res.success && res.data;
+  const html = d ? `<div class="ai-insight-list">
+    <div class="ai-insight-item"><div class="ai-insight-icon">📊</div><div class="ai-insight-text">${res.data.summary}</div></div>
+    ${(res.data.recommendations||[]).map(r => `<div class="ai-insight-item"><div class="ai-insight-icon">✅</div><div class="ai-insight-text">${r}</div></div>`).join('')}
+    ${res.data.shift_adjustment ? `<div class="ai-insight-item"><div class="ai-insight-icon">🔄</div><div class="ai-insight-text"><strong>Shift Adjustment:</strong> ${res.data.shift_adjustment}</div></div>` : ''}
+  </div>` : '<p style="color:rgba(255,255,255,0.5);">Could not analyze. Check AI API key.</p>';
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
+async function runBillingAudit() {
+  const targets = ['billing-fraud-content', 'ai-billing-audit'];
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Scanning billing records for anomalies...</div>'; });
+  const res = await MediCare.aiRequest('admin', 'billing_anomaly', { total_bills: 246, pending: 46, recent_flags: ['duplicate lab charges', 'unusual medicine cost'], month: new Date().toLocaleString('default',{month:'long'}) });
+  const d = res.success && res.data;
+  const html = d ? `<div class="ai-insight-list">
+    <div class="ai-insight-item"><div class="ai-insight-icon">${d.anomalies_detected > 0 ? '🚨' : '✅'}</div><div class="ai-insight-text"><strong>${d.anomalies_detected || 0} anomalies detected.</strong> Risk Score: ${d.risk_score || 0}/100. ${d.summary}</div></div>
+    ${(d.flagged_items||[]).map(f => `<div class="ai-insight-item"><div class="ai-insight-icon">⚠️</div><div class="ai-insight-text">${f}</div></div>`).join('')}
+  </div>` : '<p style="color:rgba(255,255,255,0.5);">Audit failed. Check API key.</p>';
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
+async function runAnalyticsSummary() {
+  const targets = ['analytics-summary-panel', 'ai-analytics'];
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Generating executive summary...</div>'; });
+  const res = await MediCare.aiRequest('admin', 'analytics_summary', { month: new Date().toLocaleString('default',{month:'long',year:'numeric'}), kpis: { bed_occupancy:'87%', patient_satisfaction:'4.2/5', avg_wait_time:'23min', revenue_growth:'12%' } });
+  const d = res.success && res.data;
+  const html = d ? `<div class="ai-insight-list">
+    <div class="ai-insight-item"><div class="ai-insight-icon">📋</div><div class="ai-insight-text">${d.executive_summary}</div></div>
+    ${(d.top_insights||[]).map(i => `<div class="ai-insight-item"><div class="ai-insight-icon">💡</div><div class="ai-insight-text">${i}</div></div>`).join('')}
+    ${(d.action_items||[]).map(a => `<div class="ai-insight-item"><div class="ai-insight-icon">→</div><div class="ai-insight-text"><strong>Action:</strong> ${a}</div></div>`).join('')}
+  </div>` : '<p style="color:rgba(255,255,255,0.5);">Could not generate summary. Check API.</p>';
+  targets.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = html; });
+}
+
+async function runInsuranceVerification() {
+  document.getElementById('insurance-result').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Verifying claim with AI...</div>';
+  const payload = { patient: document.getElementById('ins-patient').value, provider: document.getElementById('ins-provider').value, policy: document.getElementById('ins-policy').value, amount: document.getElementById('ins-amount').value, procedure: document.getElementById('ins-procedure').value };
+  const res = await MediCare.aiRequest('admin', 'insurance_verification', payload);
+  const d = res.success && res.data;
+  document.getElementById('insurance-result').innerHTML = d ? `
+    <div class="insight-card" style="margin-top:12px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <span style="font-size:28px;font-weight:800;color:${d.approval_probability>=70?'var(--green-500)':d.approval_probability>=40?'var(--amber-500)':'var(--red-500)'};">${d.approval_probability||0}%</span>
+        <div><div style="font-weight:700;color:white;">Approval Probability</div><div style="font-size:12px;color:rgba(255,255,255,0.5);">${d.recommendation}</div></div>
+      </div>
+      ${(d.risk_factors||[]).map(r => `<div style="font-size:12.5px;color:var(--amber-300);margin-top:4px;">⚠ ${r}</div>`).join('')}
+      ${d.notes ? `<p style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:10px;">${d.notes}</p>` : ''}
+    </div>` : '<p style="color:var(--red-400);">Verification failed. Check API.</p>';
+}
+
+// ── Load Departments for Dropdown ─────────────────────
+async function loadDepartmentsDropdown() {
+  const res = await MediCare.API.get('admin.php', { action: 'departments' });
+  if (res.success && res.data) {
+    const sel = document.getElementById('doc-dept');
+    if (sel) res.data.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.name; sel.appendChild(o); });
+  }
+}
+
+// ── Init ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  MediCare.startClock(document.querySelector('[data-clock]'));
+  if (!MediCare.getUser()) MediCare.setUser({ full_name: 'Admin User', email: 'admin@medicare.com', role: 'admin' });
+  MediCare.populateUserUI(MediCare.getUser());
+  await loadStats();
+  await loadDepartmentsDropdown();
+  MediCare.loadNotifications('admin');
+  setTimeout(() => { runBedForecast(); runStaffOptimization(); runBillingAudit(); }, 800);
+  MediCare.initChat(document.getElementById('ai-chat-wrap'), 'admin', 'chat');
+});
+</script>
+</body>
+</html>

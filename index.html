@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediCare Pro | Hospital Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #071730;
+      --navy-mid: #0c1f3f;
+      --navy-light: #122850;
+      --teal: #00c8c2;
+      --teal-dim: rgba(0,200,194,0.12);
+      --white: #ffffff;
+      --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4);
+      --white-20: rgba(255,255,255,0.2);
+      --white-10: rgba(255,255,255,0.1);
+      --white-06: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.1);
+      --font: 'Sora', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font);
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(7,23,48,0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--teal), #1d6cf5);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      color: white; font-size: 15px;
+    }
+    .brand-text strong { display: block; font-size: 15px; font-weight: 700; color: white; }
+    .brand-text small  { font-size: 10px; color: var(--white-40); letter-spacing: 0.1em; text-transform: uppercase; }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-nav {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      color: var(--white-60);
+      background: transparent;
+    }
+    .btn-nav:hover { background: var(--white-06); color: white; }
+    .btn-nav.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #071730;
+    }
+    .btn-nav.primary:hover { background: #00ddd7; }
+
+    /* ── HERO ── */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 48px 60px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--teal-dim);
+      border: 1px solid rgba(0,200,194,0.25);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      margin-bottom: 28px;
+      letter-spacing: 0.04em;
+    }
+    .hero-badge i { font-size: 10px; }
+    h1 {
+      font-size: clamp(32px, 5vw, 54px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 700px;
+      margin-bottom: 18px;
+    }
+    h1 em { color: var(--teal); font-style: normal; }
+    .hero-sub {
+      font-size: 16px;
+      color: var(--white-40);
+      line-height: 1.7;
+      max-width: 520px;
+      margin-bottom: 40px;
+    }
+
+    /* ── MODULE CARDS ── */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .module-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: left;
+      text-decoration: none;
+      color: white;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .module-card:hover {
+      border-color: var(--white-20);
+      background: var(--navy-light);
+      transform: translateY(-2px);
+    }
+    .module-card.admin:hover  { border-color: rgba(29,108,245,0.5); }
+    .module-card.doctor:hover { border-color: rgba(0,200,194,0.5); }
+    .module-card.patient:hover{ border-color: rgba(139,92,246,0.5); }
+
+    .card-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      display: grid; place-items: center;
+      font-size: 18px;
+    }
+    .card-icon.admin   { background: rgba(29,108,245,0.15); color: #4d8ef7; }
+    .card-icon.doctor  { background: rgba(0,200,194,0.15);  color: var(--teal); }
+    .card-icon.patient { background: rgba(139,92,246,0.15); color: #a78bfa; }
+
+    .card-title { font-size: 15px; font-weight: 700; }
+    .card-desc  { font-size: 12.5px; color: var(--white-40); line-height: 1.6; flex: 1; }
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.15s;
+      border: 1px solid;
+      width: fit-content;
+    }
+    .card-link.admin   { color: #4d8ef7;  border-color: rgba(29,108,245,0.3);  background: rgba(29,108,245,0.08); }
+    .card-link.doctor  { color: var(--teal); border-color: rgba(0,200,194,0.3); background: rgba(0,200,194,0.08); }
+    .card-link.patient { color: #a78bfa;  border-color: rgba(139,92,246,0.3);  background: rgba(139,92,246,0.08); }
+    .card-link:hover { opacity: 0.85; }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      padding: 32px 48px;
+      border-top: 1px solid var(--border);
+      max-width: 900px;
+      margin: 40px auto 0;
+      width: 100%;
+    }
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 0 24px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num  { font-size: 26px; font-weight: 800; color: var(--teal); font-family: var(--mono); }
+    .stat-lbl  { font-size: 11px; color: var(--white-40); font-weight: 500; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 20px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    footer p { font-size: 12px; color: var(--white-40); }
+    .creds-note {
+      font-size: 11px;
+      color: var(--white-20);
+      font-family: var(--mono);
+      background: var(--white-06);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="brand" href="index.html">
+      <div class="brand-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="brand-text">
+        <strong>MediCare Pro</strong>
+        <small>Hospital Management System</small>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <a href="admin/login.html"   class="btn-nav">Admin</a>
+      <a href="doctor/login.html"  class="btn-nav">Doctor</a>
+      <a href="patient/login.html" class="btn-nav primary">Patient Portal</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="hero-badge">
+      <i class="fa-solid fa-sparkles"></i>
+      AI-Powered · Gemini-Integrated · Patent-Ready
+    </div>
+
+    <h1>One platform for the <em>entire</em> hospital.</h1>
+
+    <p class="hero-sub">
+      MediCare Pro unifies administration, clinical care, and patient management
+      into a single intelligent system — with AI embedded at every step.
+    </p>
+
+    <div class="module-grid">
+      <div class="module-card admin" onclick="location.href='admin/login.html'">
+        <div class="card-icon admin"><i class="fa-solid fa-chart-pie"></i></div>
+        <div class="card-title">Admin Portal</div>
+        <div class="card-desc">Command centre with live stats, bed management, billing, staff rostering, and AI analytics.</div>
+        <a href="admin/login.html" class="card-link admin">
+          Sign in <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+
+      <div class="module-card doctor" onclick="location.href='doctor/login.html'">
+        <div class="card-icon doctor"><i class="fa-solid fa-stethoscope"></i></div>
+        <div class="card-title">Doctor Portal</div>
+        <div class="card-desc">Clinical suite with AI diagnosis, SOAP notes, drug interaction checks, and patient queue.</div>
+        <a href="doctor/login.html" class="card-link doctor">
+          Sign in <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+
+      <div class="module-card patient" onclick="location.href='patient/login.html'">
+        <div class="card-icon patient"><i class="fa-solid fa-user-injured"></i></div>
+        <div class="card-title">Patient Portal</div>
+        <div class="card-desc">Book appointments, view records, check lab reports, get AI health insights and 24/7 support.</div>
+        <a href="patient/login.html" class="card-link patient">
+          Sign in <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-item"><div class="stat-num">15+</div><div class="stat-lbl">AI Features</div></div>
+      <div class="stat-item"><div class="stat-num">3</div><div class="stat-lbl">Modules</div></div>
+      <div class="stat-item"><div class="stat-num">12</div><div class="stat-lbl">DB Tables</div></div>
+      <div class="stat-item"><div class="stat-num">PHP 8</div><div class="stat-lbl">Backend</div></div>
+      <div class="stat-item"><div class="stat-num">Gemini</div><div class="stat-lbl">AI Engine</div></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 MediCare Pro — All rights reserved</p>
+    <span class="creds-note">Demo: admin / doctor / patient@medicare.com · password: admin123</span>
+  </footer>
+
+  <script src="assets/js/medicare.js"></script>
+</body>
+</html>

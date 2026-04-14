@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Login | MediCare Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-left" style="background:linear-gradient(145deg,#0d0628 0%,#1a0b4a 100%);">
+    <a href="../index.html" style="display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,#8b5cf6,#1d6cf5);border-radius:11px;display:grid;place-items:center;color:white;font-size:15px;"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div><strong style="color:white;font-size:14px;font-weight:700;">MediCare Pro</strong><small style="display:block;font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.1em;">HMS</small></div>
+    </a>
+    <div class="login-left-content">
+      <span class="tag purple" style="width:fit-content;background:rgba(139,92,246,0.15);color:var(--purple-500);border:1px solid rgba(139,92,246,0.3);"><i class="fa-solid fa-user-shield"></i> Patient Portal</span>
+      <h2 class="login-left-title">Your <em style="color:#a78bfa;">smart health</em> companion.</h2>
+      <p style="font-size:13.5px;color:rgba(255,255,255,0.45);line-height:1.7;max-width:380px;">Book appointments intelligently, understand your lab reports with AI, get symptom guidance, and track your complete health journey.</p>
+      <div class="login-features">
+        <div class="login-feature-item">
+          <div class="login-feature-icon purple"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+          <div class="login-feature-text">
+            <strong>AI Report Summarizer</strong>
+            <span>Understand complex lab values in simple language</span>
+          </div>
+        </div>
+        <div class="login-feature-item">
+          <div class="login-feature-icon teal"><i class="fa-solid fa-calendar-check"></i></div>
+          <div class="login-feature-text">
+            <strong>Smart Appointment Booking</strong>
+            <span>AI routes you to the right doctor based on symptoms</span>
+          </div>
+        </div>
+        <div class="login-feature-item">
+          <div class="login-feature-icon blue"><i class="fa-solid fa-robot"></i></div>
+          <div class="login-feature-text">
+            <strong>24/7 AI Health Assistant</strong>
+            <span>Get answers to health questions any time</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:rgba(255,255,255,0.2);">© 2026 MediCare Pro</p>
+  </div>
+
+  <div class="login-right">
+    <div class="login-form-wrap">
+      <div style="margin-bottom:32px;">
+        <h1 class="login-form-title">Patient Sign In</h1>
+        <p class="login-form-sub">Access your personal health dashboard.</p>
+      </div>
+
+      <div id="error-msg" class="hidden" style="background:var(--red-100);border:1px solid var(--red-500);color:var(--red-500);padding:12px 16px;border-radius:10px;font-size:13.5px;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-circle-xmark"></i><span id="error-text"></span>
+      </div>
+
+      <form id="login-form" style="display:flex;flex-direction:column;gap:18px;">
+        <div class="form-group">
+          <label class="form-label">Email Address <span class="req">*</span></label>
+          <div style="position:relative;">
+            <i class="fa-regular fa-envelope" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-400);font-size:14px;"></i>
+            <input type="email" id="email" class="form-control" placeholder="patient@medicare.com" style="padding-left:40px;" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password <span class="req">*</span></label>
+          <div style="position:relative;">
+            <i class="fa-solid fa-lock" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-400);font-size:14px;"></i>
+            <input type="password" id="password" class="form-control" placeholder="••••••••" style="padding-left:40px;" required>
+            <button type="button" id="toggle-pass" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-400);"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-block btn-lg" style="background:var(--purple-500);color:white;border-color:var(--purple-500);box-shadow:0 4px 12px rgba(139,92,246,0.3);" id="login-btn">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Patient Portal
+        </button>
+      </form>
+
+      <div style="margin-top:20px;padding:14px;background:var(--ink-50);border-radius:10px;border:1px solid var(--ink-200);">
+        <p style="font-size:12px;font-weight:600;color:var(--ink-500);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Demo Credentials</p>
+        <p style="font-size:13px;color:var(--ink-700);font-family:var(--font-mono);">patient@medicare.com / admin123</p>
+      </div>
+      <div style="margin-top:24px;text-align:center;">
+        <a href="../index.html" style="font-size:13px;color:var(--ink-400);">← Back to portal</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/medicare.js"></script>
+<script>
+  document.getElementById('toggle-pass').addEventListener('click', function() {
+    const p = document.getElementById('password'), i = this.querySelector('i');
+    p.type = p.type === 'password' ? 'text' : 'password';
+    i.className = p.type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+  });
+  document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    document.getElementById('error-msg').classList.add('hidden');
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="ai-spinner" style="border:2px solid rgba(255,255,255,0.3);border-top-color:white;width:16px;height:16px;"></div> Signing in...';
+
+    await new Promise(r => setTimeout(r, 600));
+    if (email === 'patient@medicare.com' && password === 'admin123') {
+      MediCare.setUser({ id: 1, full_name: 'Priya Verma', email, role: 'patient' });
+      window.location.href = 'dashboard.html'; return;
+    }
+    try {
+      const res = await MediCare.API.post('login.php', { role: 'patient', email, password });
+      if (res.success) { MediCare.setUser(res.user); window.location.href = 'dashboard.html'; return; }
+    } catch(err) {}
+
+    document.getElementById('error-msg').classList.remove('hidden');
+    document.getElementById('error-text').textContent = 'Use patient@medicare.com / admin123';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In to Patient Portal';
+  });
+</script>
+</body>
+</html>
