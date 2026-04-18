@@ -56,7 +56,7 @@ define('DB_HOST', 'localhost');
 define('DB_NAME', 'medicare_pro');
 define('DB_USER', 'root');
 define('DB_PASS', 'your_password');
-define('ANTHROPIC_API_KEY', 'sk-ant-api...');  // ← Add your key
+define('GEMINI_API_KEY', 'sk-ant-api...');  // ← Add your key
 ```
 
 ### 3. Web Server
@@ -64,8 +64,8 @@ define('ANTHROPIC_API_KEY', 'sk-ant-api...');  // ← Add your key
 - Place project in `htdocs/` or `/var/www/html/`
 - Access at `http://localhost/Medicare-Pro/`
 
-### 4. Get Anthropic API Key
-- Visit https://console.anthropic.com
+### 4. Get Gemini API Key
+- Visit https://aistudio.google.com
 - Create a new API key
 - Paste in `db.php` as shown above
 
@@ -118,7 +118,7 @@ define('ANTHROPIC_API_KEY', 'sk-ant-api...');  // ← Add your key
 - **Frontend**: HTML5, CSS3 (CSS Variables, Grid, Flexbox), Vanilla JS
 - **Backend**: PHP 8+ (PDO, REST APIs, session auth)
 - **Database**: MySQL 8 (12 normalized tables, foreign keys, indexing)
-- **AI Layer**: Anthropic Claude API (claude-opus-4-5)
+- **AI Layer**: Gemini API (gemini-2.5-flash)
 - **Icons**: Font Awesome 6.5
 - **Fonts**: Sora + DM Mono (Google Fonts)
 - **Auth**: bcrypt password hashing, PHP sessions
@@ -127,7 +127,7 @@ define('ANTHROPIC_API_KEY', 'sk-ant-api...');  // ← Add your key
 
 ## Patent-Ready Innovations
 
-1. **Unified AI Proxy Architecture** — Single PHP endpoint routing 15+ medical AI tasks to Claude with role-based system prompts and structured JSON output
+1. **Unified AI Proxy Architecture** — Single PHP endpoint routing 15+ medical AI tasks to Gemini with role-based system prompts and structured JSON output
 2. **Triage-Integrated Booking** — AI urgency scoring embedded in appointment creation flow
 3. **Clinical Risk Score Layer** — Real-time patient risk stratification computed per consultation
 4. **Bed Prediction Model** — Time-of-day aware occupancy forecasting with ward-level granularity
